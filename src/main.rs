@@ -1,4 +1,4 @@
-use clap::{Arg, Parser};
+use clap::Parser;
 use dotenv::dotenv;
 use std::fs::File;
 use std::io::{self};
