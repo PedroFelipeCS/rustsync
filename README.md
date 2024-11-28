@@ -7,6 +7,11 @@ Rustsync é um sistema de backup de diretório escrito em Rust. Ele cria um arqu
 Para compilar e instalar o `rustsync`, você precisa ter o Rust instalado. Você pode instalar o Rust usando [rustup](https://rustup.rs/).
 
 Clone o repositório e compile o projeto:
+~~~sh
+git clone <URL_DO_REPOSITORIO>
+cd rustsync
+cargo build --release
+~~~
 
 ## Como usar
 
