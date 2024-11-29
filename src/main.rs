@@ -2,6 +2,7 @@ use clap::Parser;
 use dotenv::dotenv;
 use std::fs::File;
 use std::io::{self};
+use std::path::PathBuf;
 use tar::Builder;
 use walkdir::WalkDir;
 
@@ -17,38 +18,45 @@ struct Cli {
     #[arg(short = 'd', long)]
     destination: String,
 
+    /// Nome do arquivo de backup
+    #[arg(short = 'n', long, default_value = "backup.tar")]
+    backup_name: String,
+
     /// Modo verbose
     #[arg(short = 'v', long)]
     verbose: bool,
 }
 
-fn backup_directory(source: &str, destination: &str, verbose: bool) -> io::Result<()> {
-    let tar_path = format!("{}/backup.tar", destination);
+fn backup_directory(source: &str, destination: &str, backup_name: &str, verbose: bool) -> io::Result<()> {
+    let tar_path = PathBuf::from(destination).join(backup_name);
     let tar_file = File::create(&tar_path)?;
     let mut tar = Builder::new(tar_file);
 
     if verbose {
-        println!("Iniciando o backup de '{}' para '{}'", source, destination);
+        println!("Iniciando o backup de '{}' para '{}'", source, tar_path.display());
     }
 
-    // Caminhar pelo diretório de origem
     for entry in WalkDir::new(source) {
         let entry = entry?;
         let path = entry.path();
-        let relative_path = path.strip_prefix(source).unwrap();
-
-        // Adicionar o arquivo ao arquivo tar somente se o caminho não estiver vazio
-        if !relative_path.as_os_str().is_empty() {
-            tar.append_path_with_name(path, relative_path)?;
-            if verbose {
-                println!("Adicionando: {:?}", path);
+        match path.strip_prefix(source) {
+            Ok(relative_path) => {
+                if !relative_path.as_os_str().is_empty() {
+                    tar.append_path_with_name(path, relative_path)?;
+                    if verbose {
+                        println!("Adicionando: {:?}", path);
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("Erro ao processar o caminho: {}", e);
             }
         }
     }
 
     tar.finish()?;
     if verbose {
-        println!("Backup concluído em: {}", tar_path);
+        println!("Backup concluído em: {}", tar_path.display());
     }
     Ok(())
 }
@@ -56,11 +64,9 @@ fn backup_directory(source: &str, destination: &str, verbose: bool) -> io::Resul
 fn main() {
     dotenv().ok(); // Carregar variáveis de ambiente do arquivo .env
 
-    // Parsear argumentos da linha de comando
     let cli = Cli::parse();
 
-    // Chamar a função de backup
-    if let Err(e) = backup_directory(&cli.source, &cli.destination, cli.verbose) {
+    if let Err(e) = backup_directory(&cli.source, &cli.destination, &cli.backup_name, cli.verbose) {
         eprintln!("Erro ao fazer backup: {}", e);
     }
 }
