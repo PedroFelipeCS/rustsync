@@ -1,4 +1,5 @@
 use clap::Parser;
+use chrono::Local;
 use dotenv::dotenv;
 use std::fs::File;
 use std::io::{self};
@@ -19,7 +20,7 @@ struct Cli {
     destination: String,
 
     /// Nome do arquivo de backup
-    #[arg(short = 'n', long, default_value = "backup.tar")]
+    #[arg(short = 'n', long, default_value = "backup")]
     backup_name: String,
 
     /// Modo verbose
@@ -28,7 +29,13 @@ struct Cli {
 }
 
 fn backup_directory(source: &str, destination: &str, backup_name: &str, verbose: bool) -> io::Result<()> {
-    let tar_path = PathBuf::from(destination).join(backup_name);
+    // Obter a data atual e formatá-la
+    let date = Local::now().format("%Y-%m-%d").to_string();
+    
+    // Adicionar a data e a extensão ao nome do arquivo de backup
+    let backup_name_with_date = format!("{}_{}.tar", backup_name, date);
+    
+    let tar_path = PathBuf::from(destination).join(backup_name_with_date);
     let tar_file = File::create(&tar_path)?;
     let mut tar = Builder::new(tar_file);
 

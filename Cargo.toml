@@ -8,3 +8,4 @@ walkdir = "2.3"  # ou a versão mais recente
 tar = "0.4"      # ou a versão mais recente
 dotenv = "0.15"  # ou a versão mais recente
 clap = { version = "4.0", features = ["derive"] }  # ou a versão mais recente
+chrono = "0.4"   # ou a versão mais recente
