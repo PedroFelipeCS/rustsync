@@ -3,6 +3,9 @@ use env_logger::Env;
 use std::io::Write;
 use std::time::SystemTime;
 
+/// Inicializa o logger com um formato customizado que inclui timestamps.
+///
+/// O logger é configurado para exibir mensagens de log com timestamps e níveis de log.
 pub fn init_logger() {
     Builder::from_env(Env::default().default_filter_or("info"))
         .format(|buf, record| {

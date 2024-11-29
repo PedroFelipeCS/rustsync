@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use tar::Builder as TarBuilder;
 use walkdir::WalkDir;
 
+/// Estrutura que define os argumentos da linha de comando
 #[derive(Parser)]
 #[command(name = "rustsync")]
 #[command(about = "Um sistema de backup de diretório", long_about = None)]
@@ -31,6 +32,18 @@ struct Cli {
     verbose: bool,
 }
 
+/// Realiza o backup do diretório de origem para o destino.
+///
+/// # Argumentos
+///
+/// * `source` - Diretório de origem.
+/// * `destination` - Diretório de destino.
+/// * `backup_name` - Nome do arquivo de backup.
+/// * `verbose` - Modo verbose para exibir mensagens detalhadas.
+///
+/// # Erros
+///
+/// Retorna um erro se ocorrer algum problema durante o processo de backup.
 fn backup_directory(
     source: &str,
     destination: &str,
@@ -76,6 +89,12 @@ fn backup_directory(
     Ok(())
 }
 
+/// Função principal que inicializa o logger, parseia os argumentos da linha de comando
+/// e chama a função de backup.
+///
+/// # Erros
+///
+/// Registra um erro se ocorrer algum problema durante o processo de backup.
 fn main() {
     dotenv().ok(); // Carregar variáveis de ambiente do arquivo .env
 
