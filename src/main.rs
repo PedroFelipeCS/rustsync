@@ -1,10 +1,14 @@
 use clap::Parser;
 use chrono::Local;
 use dotenv::dotenv;
+use env_logger::Builder;
+use env_logger::Env;
+use log::{info, warn, error};
 use std::fs::File;
-use std::io::{self};
+use std::io::{self, Write};
 use std::path::PathBuf;
-use tar::Builder;
+use std::time::SystemTime;
+use tar::Builder as TarBuilder;
 use walkdir::WalkDir;
 
 #[derive(Parser)]
@@ -37,11 +41,9 @@ fn backup_directory(source: &str, destination: &str, backup_name: &str, verbose:
     
     let tar_path = PathBuf::from(destination).join(backup_name_with_date);
     let tar_file = File::create(&tar_path)?;
-    let mut tar = Builder::new(tar_file);
+    let mut tar = TarBuilder::new(tar_file);
 
-    if verbose {
-        println!("Iniciando o backup de '{}' para '{}'", source, tar_path.display());
-    }
+    info!("Iniciando o backup de '{}' para '{}'", source, tar_path.display());
 
     for entry in WalkDir::new(source) {
         let entry = entry?;
@@ -51,29 +53,42 @@ fn backup_directory(source: &str, destination: &str, backup_name: &str, verbose:
                 if !relative_path.as_os_str().is_empty() {
                     tar.append_path_with_name(path, relative_path)?;
                     if verbose {
-                        println!("Adicionando: {:?}", path);
+                        info!("Adicionando: {:?}", path);
                     }
                 }
             }
             Err(e) => {
-                eprintln!("Erro ao processar o caminho: {}", e);
+                warn!("Erro ao processar o caminho: {}", e);
             }
         }
     }
 
     tar.finish()?;
-    if verbose {
-        println!("Backup concluído em: {}", tar_path.display());
-    }
+    info!("Backup concluído em: {}", tar_path.display());
     Ok(())
 }
 
 fn main() {
     dotenv().ok(); // Carregar variáveis de ambiente do arquivo .env
 
+    // Configurar o env_logger com um formato de timestamp personalizado
+    Builder::from_env(Env::default().default_filter_or("info"))
+        .format(|buf, record| {
+            let datetime = SystemTime::now();
+            let datetime: chrono::DateTime<chrono::Local> = datetime.into();
+            writeln!(
+                buf,
+                "{} [{}] - {}",
+                datetime.format("%Y-%m-%d_%H:%M:%S"),
+                record.level(),
+                record.args()
+            )
+        })
+        .init();
+
     let cli = Cli::parse();
 
     if let Err(e) = backup_directory(&cli.source, &cli.destination, &cli.backup_name, cli.verbose) {
-        eprintln!("Erro ao fazer backup: {}", e);
+        error!("Erro ao fazer backup: {}", e);
     }
 }

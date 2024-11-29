@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-walkdir = "2.3"  # ou a versão mais recente
-tar = "0.4"      # ou a versão mais recente
-dotenv = "0.15"  # ou a versão mais recente
-clap = { version = "4.0", features = ["derive"] }  # ou a versão mais recente
-chrono = "0.4"   # ou a versão mais recente
+walkdir = "2.3"
+tar = "0.4"
+dotenv = "0.15"
+clap = { version = "4.0", features = ["derive"] }
+chrono = "0.4"
+log = "0.4"
+env_logger = "0.9"
