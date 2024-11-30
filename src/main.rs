@@ -1,4 +1,5 @@
 mod logger;
+mod structdir;
 
 use chrono::Local;
 use clap::Parser;
@@ -9,6 +10,7 @@ use std::io::{self};
 use std::path::PathBuf;
 use tar::Builder as TarBuilder;
 use walkdir::WalkDir;
+use structdir::backup_struct::create_backup_structure;
 
 /// Estrutura que define os argumentos da linha de comando
 #[derive(Parser)]
@@ -44,27 +46,24 @@ struct Cli {
 /// # Erros
 ///
 /// Retorna um erro se ocorrer algum problema durante o processo de backup.
-fn backup_directory(
-    source: &str,
-    destination: &str,
-    backup_name: &str,
-    verbose: bool,
-) -> io::Result<()> {
-    // Obter a data atual e formatá-la
-    let date = Local::now().format("%Y-%m-%d").to_string();
+fn backup_directory(source: &str, destination: &str, backup_name: &str, verbose: bool) -> io::Result<()> {
+    // Criar a estrutura do diretório de backup
+    create_backup_structure(destination, backup_name)?;
 
-    // Adicionar a data e a extensão ao nome do arquivo de backup
-    let backup_name_with_date = format!("{}_{}.tar", backup_name, date);
-
-    let tar_path = PathBuf::from(destination).join(backup_name_with_date);
+    // Obter a hora atual e formatá-la
+    let time = Local::now().format("%H-%M").to_string();
+    
+    // Adicionar a hora e a extensão ao nome do arquivo de backup
+    let backup_name_with_time = format!("{}_{}.tar", backup_name, time);
+    
+    let tar_path = PathBuf::from(destination)
+        .join(backup_name)
+        .join(Local::now().format("%Y/%m/%d").to_string())
+        .join(backup_name_with_time);
     let tar_file = File::create(&tar_path)?;
     let mut tar = TarBuilder::new(tar_file);
 
-    info!(
-        "Iniciando o backup de '{}' para '{}'",
-        source,
-        tar_path.display()
-    );
+    info!("Iniciando o backup de '{}' para '{}'", source, tar_path.display());
 
     for entry in WalkDir::new(source) {
         let entry = entry?;
