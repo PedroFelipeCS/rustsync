@@ -1,5 +1,7 @@
 mod logger;
 mod structdir;
+mod cron;
+mod config;
 
 use chrono::Local;
 use clap::Parser;
@@ -8,26 +10,38 @@ use log::{error, info, warn};
 use std::fs::File;
 use std::io::{self};
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
 use tar::Builder as TarBuilder;
 use walkdir::WalkDir;
 use structdir::backup_struct::create_backup_structure;
+use config::{load_config, BackupConfig};
 
 /// Estrutura que define os argumentos da linha de comando
 #[derive(Parser)]
 #[command(name = "rustsync")]
 #[command(about = "Um sistema de backup de diretório", long_about = None)]
 struct Cli {
+    /// Caminho para o arquivo de configuração
+    #[arg(short = 'c', long)]
+    config: Option<String>,
+
     /// Diretório de origem
     #[arg(short = 's', long)]
-    source: String,
+    source: Option<String>,
 
     /// Diretório de destino
     #[arg(short = 'd', long)]
-    destination: String,
+    destination: Option<String>,
 
     /// Nome do arquivo de backup
     #[arg(short = 'n', long, default_value = "backup")]
     backup_name: String,
+
+    /// Expressão cron para agendamento
+    #[arg(short = 'r', long)]
+    cron: Option<String>,
 
     /// Modo verbose
     #[arg(short = 'v', long)]
@@ -102,7 +116,36 @@ fn main() {
 
     let cli = Cli::parse();
 
-    if let Err(e) = backup_directory(&cli.source, &cli.destination, &cli.backup_name, cli.verbose) {
-        error!("Erro ao fazer backup: {}", e);
+    if let Some(config_path) = &cli.config {
+        let config = load_config(config_path);
+        for backup in config.backups {
+            let backup = Arc::new(backup);
+            cron::schedule_backups(backup);
+        }
+    } else {
+        if let Some(cron_expr) = &cli.cron {
+            let source = Arc::new(cli.source.clone().expect("Diretório de origem não especificado"));
+            let destination = Arc::new(cli.destination.clone().expect("Diretório de destino não especificado"));
+            let backup_name = Arc::new(cli.backup_name.clone());
+            let cron_expr = Arc::new(cron_expr.clone());
+            cron::schedule_backups(Arc::new(BackupConfig {
+                source: source.to_string(),
+                destination: destination.to_string(),
+                backup_name: backup_name.to_string(),
+                cron: cron_expr.to_string(),
+                verbose: cli.verbose,
+            }));
+        } else {
+            let source = cli.source.as_deref().expect("Diretório de origem não especificado");
+            let destination = cli.destination.as_deref().expect("Diretório de destino não especificado");
+            if let Err(e) = backup_directory(source, destination, &cli.backup_name, cli.verbose) {
+                error!("Erro ao fazer backup: {}", e);
+            }
+        }
+    }
+
+    // Manter o programa rodando para permitir que os threads de backup sejam executados
+    loop {
+        thread::sleep(Duration::from_secs(60));
     }
 }
