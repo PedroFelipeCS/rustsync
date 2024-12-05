@@ -15,16 +15,85 @@ cargo build --release
 
 ## Como usar
 
+### Usando Argumentos de Linha de Comando
+
 ~~~bash
-rustsync -s <Diretorio/de/origem> -d <Diretorio/de/destino> -v <Imprime o que esta acontecendo>
+rustsync -s <Diretorio/de/origem> -d <Diretorio/de/destino> -n <Nome do backup> -v <Imprime o que está acontecendo>
 ~~~
+
+### Usando um Arquivo de Configuração
+
+Você pode usar um arquivo de configuração YAML para definir múltiplos backups. Aqui está um exemplo de como usar o `rustsync` com um arquivo de configuração:
+
+~~~bash
+rustsync -c config.yaml
+~~~
+
+### Exemplo de Arquivo de Configuração (config.yaml)
+
+```yaml
+backups:
+  - source: "/path/to/source1"
+    destination: "/path/to/destination1"
+    backup_name: "backup1"
+    cron: "0 0 * * *"  # Todos os dias à meia-noite
+    verbose: true
+  - source: "/path/to/source2"
+    destination: "/path/to/destination2"
+    backup_name: "backup2"
+    cron: "0 12 * * *"  # Todos os dias ao meio-dia
+    verbose: false
+```
 
 ### Informações de argumentos
 
-1. (-s) Diretorio de origem a ser feito backup.
-2. (-d) Diretorio de destino do backup.
-3. (-v) Ativa o modo verbose para exibir mensagem.
+1. (-s) Diretório de origem a ser feito backup.
+2. (-d) Diretório de destino do backup.
+3. (-n) Nome do arquivo de backup.
+4. (-c) Caminho para o arquivo de configuração YAML.
+5. (-r) Expressão para cron agendamento.
+6. (-v) Ativa o modo verbose para exibir mensagens detalhadas.
 
+### Configurando como um serviço systemd
+
+Você pode configurar o rustsync para ser executado automaticamente usando o systemd. Aqui está um exemplo de como fazer isso:
+
+#### Criar uma arquivo de unidade systemd
+
+Crie um arquivo de unidade systemd em `/etc/systemd/system/rustsync.service` com o seguinte conteúdo.
+
+~~~bash
+[Unit]
+Description=Rustsync Backup Service
+After=network.target
+
+[Service]
+ExecStart=/caminho/para/seu/programa/rustsync -c /caminho/para/config.yaml
+Restart=always
+User=seu_usuario
+Group=seu_grupo
+
+[Install]
+WantedBy=multi-user.target
+~~~
+
+#### Recarregar o systemd e habilitar o serviço
+
+Depois de cirar o arquivo de unidade, recarregue o `systemd` para reconhecer o novo serviço e, em seguida, habilitar o inicie o serviço
+
+~~~bash
+sudo systemctl daemon-reload
+sudo systemctl enable rustsync.service
+sudo systemctl start rustsync.service
+~~~
+
+#### Reinciar o serviço para aplicar novas configurações
+
+Para aplica novas configurações ao `Rustsync` você precisa reinciar o serviço utilize:
+
+~~~bash
+systemctl restart rustsync.service
+~~~
 
 ### Comentários no Código
 
@@ -99,4 +168,4 @@ fn main() {
         eprintln!("Erro ao fazer backup: {}", e);
     }
 }
-```
+````
