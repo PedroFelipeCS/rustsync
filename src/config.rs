@@ -1,6 +1,12 @@
 use serde::Deserialize;
 
 #[derive(Deserialize)]
+pub struct RcloneConfig {
+    pub dest: String,
+    pub cron: String,
+}
+
+#[derive(Deserialize)]
 pub struct BackupConfig {
     pub source: String,
     pub destination: String,
@@ -11,6 +17,7 @@ pub struct BackupConfig {
 
 #[derive(Deserialize)]
 pub struct Config {
+    pub rclone: RcloneConfig,
     pub backups: Vec<BackupConfig>,
 }
 
